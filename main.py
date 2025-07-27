@@ -193,9 +193,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type = update.message.chat.type
     text = update.message.text
 
+    # Log message
     print(f'Message from {update.message.from_user.id} in {message_type}: "{text}"')
 
-    if message_type == 'group':
+    # Ignore non-private (group) messages unless bot is explicitly mentioned
+    if message_type != 'private':
+        # Only respond if bot is mentioned in a group
         if BOT_USERNAME in text:
             new_text = text.replace(BOT_USERNAME, "").strip()
             response = handle_response(new_text)
@@ -205,9 +208,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=response
             )
         await delete_command_message(update)
-    else:
-        response = handle_response(text)
-        await update.message.reply_text(response)
+        return
+
+    response = handle_response(text)
+    await update.message.reply_text(response)
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message_type = update.message.chat.type
+    text = update.message.text
+
+    # Log message
+    print(f'Message from {update.message.from_user.id} in {message_type}: "{text}"')
+
+    # Ignore non-private (group) messages unless bot is explicitly mentioned
+    if message_type != 'private':
+        # Only respond if bot is mentioned in a group
+        if BOT_USERNAME in text:
+            new_text = text.replace(BOT_USERNAME, "").strip()
+            response = handle_response(new_text)
+            await context.bot.send_message(
+                chat_id=GROUP_ID,
+                message_thread_id=TOPIC_ID,
+                text=response
+            )
+        # Always delete the message for cleanup
+        await delete_command_message(update)
+        return
+
+    # Respond normally in private chat
+    response = handle_response(text)
+    await update.message.reply_text(response)
 
 
 # === Error Handler ===
